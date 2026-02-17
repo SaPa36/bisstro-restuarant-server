@@ -30,6 +30,7 @@ async function run() {
 
     const menuCollection = client.db('bisstroDB').collection('menu');
     const reviewCollection = client.db('bisstroDB').collection('reviews');
+    const cartCollection = client.db('bisstroDB').collection('cart');
 
     //menu related api
     app.get('/menu', async (req, res) => {
@@ -37,6 +38,21 @@ async function run() {
         res.send(result);
     });
     
+
+    //review related api
+    app.get('/reviews', async (req, res) => {
+        const result = await reviewCollection.find().toArray();
+        res.send(result);
+    });
+
+
+    //cart related api
+    app.post('/carts', async (req, res) => {
+        const item = req.body;
+        console.log(item);
+        const result = await cartCollection.insertOne(item);
+        res.send(result);
+    });
     
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
