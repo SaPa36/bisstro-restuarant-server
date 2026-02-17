@@ -28,6 +28,7 @@ async function run() {
     // Connect the client to the server	(optional starting in v4.7)
     await client.connect();
 
+    const userCollection = client.db('bisstroDB').collection('users');
     const menuCollection = client.db('bisstroDB').collection('menu');
     const reviewCollection = client.db('bisstroDB').collection('reviews');
     const cartCollection = client.db('bisstroDB').collection('cart');
@@ -42,6 +43,19 @@ async function run() {
     //review related api
     app.get('/reviews', async (req, res) => {
         const result = await reviewCollection.find().toArray();
+        res.send(result);
+    });
+
+
+    //user related api
+    app.post('/users', async (req, res) => {
+        const user = req.body;
+        const query = { email: user.email };
+        const existingUser = await userCollection.findOne(query);
+        if (existingUser) {
+            return res.send({ message: 'User already exists' });
+        }
+        const result = await userCollection.insertOne(user);
         res.send(result);
     });
 
