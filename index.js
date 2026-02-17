@@ -3,7 +3,7 @@ const express = require('express');
 const app = express();
 const cors = require('cors');
 const port = process.env.PORT || 5000;
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 
 //middleware
 app.use(cors());
@@ -49,7 +49,9 @@ async function run() {
     //cart related api
 
     app.get('/carts', async (req, res) => {
-        const result = await cartCollection.find().toArray();
+        const email = req.query.email;
+        const query = { email: email };
+        const result = await cartCollection.find(query).toArray();
         res.send(result);
     });
 
@@ -57,6 +59,13 @@ async function run() {
         const item = req.body;
         console.log(item);
         const result = await cartCollection.insertOne(item);
+        res.send(result);
+    });
+
+    app.delete('/carts/:id', async (req, res) => {
+        const id = req.params.id;
+        const query = { _id: new ObjectId(id) };
+        const result = await cartCollection.deleteOne(query);
         res.send(result);
     });
     
