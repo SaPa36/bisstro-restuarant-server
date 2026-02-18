@@ -72,14 +72,28 @@ async function run() {
             next();
         });
     };
-    
+
     //user related api
     app.get('/users', verifyToken, async (req, res) => {
         const result = await userCollection.find().toArray();
         res.send(result);
     });
 
-    
+    //check admin
+    app.get('/users/admin/:email', verifyToken, async (req, res) => {
+        const email = req.params.email;
+        if (req.decoded.email !== email) {
+            return res.status(403).send({ message: 'forbidden access' });
+        }
+        const query = { email: email };
+        const user = await userCollection.findOne(query);
+        let admin = false;
+        if (user?.role === 'admin') {
+            admin = true;
+        }
+        res.send({ admin });
+    });
+
     app.post('/users', async (req, res) => {
         const user = req.body;
         const query = { email: user.email };
