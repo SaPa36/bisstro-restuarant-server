@@ -41,6 +41,12 @@ async function run() {
         const result = await menuCollection.find().toArray();
         res.send(result);
     });
+
+    app.post('/menu', async (req, res) => {
+        const item = req.body;
+        const result = await menuCollection.insertOne(item);
+        res.send(result);
+    });
     
 
     //review related api
@@ -56,7 +62,7 @@ async function run() {
         res.send({ token });
     });
 
-    //verify jwt
+    //verify jwt middleware
     const verifyToken = (req, res, next) => {
         console.log('token inside verifyToken', req.headers.authorization);
         const authorization = req.headers.authorization;
@@ -73,8 +79,19 @@ async function run() {
         });
     };
 
+    //use verify admin after verify token
+    const verifyAdmin = async (req, res, next) => {
+        const email = req.decoded.email;
+        const query = { email: email };
+        const user = await userCollection.findOne(query);
+        if (user?.role !== 'admin') {
+            return res.status(403).send({ message: 'forbidden access' });
+        }
+        next();
+    };
+
     //user related api
-    app.get('/users', verifyToken, async (req, res) => {
+    app.get('/users', verifyToken, verifyAdmin, async (req, res) => {
         const result = await userCollection.find().toArray();
         res.send(result);
     });
@@ -105,14 +122,14 @@ async function run() {
         res.send(result);
     });
 
-    app.delete('/users/:id', async (req, res) => {
+    app.delete('/users/:id', verifyToken, verifyAdmin, async (req, res) => {
         const id = req.params.id;
         const query = { _id: new ObjectId(id) };
         const result = await userCollection.deleteOne(query);
         res.send(result);
     });
 
-    app.patch('/users/admin/:id', async (req, res) => {
+    app.patch('/users/admin/:id', verifyToken, verifyAdmin, async (req, res) => {
         const id = req.params.id;
         const query = { _id: new ObjectId(id) };
         const updatedDoc = {
