@@ -44,6 +44,7 @@ async function run() {
         const menuCollection = client.db('bisstroDB').collection('menu');
         const reviewCollection = client.db('bisstroDB').collection('reviews');
         const cartCollection = client.db('bisstroDB').collection('cart');
+        const paymentCollection = client.db('bisstroDB').collection('payments');
 
 
 
@@ -233,6 +234,16 @@ async function run() {
             res.send({
                 clientSecret: paymentIntent.client_secret,
             });
+        });
+
+        app.post('/payments', async (req, res) => {
+            const payment = req.body;
+            const paymentResult = await paymentCollection.insertOne(payment);
+
+            const query = { _id: { $in: payment.cartIds.map(id => new ObjectId(id)) } };
+            const deleteResult = await cartCollection.deleteMany(query);
+
+            res.send({ paymentResult, deleteResult });
         });
 
 
