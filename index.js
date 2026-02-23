@@ -115,7 +115,7 @@ async function run() {
                     { _id: id },
                     { _id: new ObjectId(id) }
                 ]
-            };  
+            };
             const updatedDoc = {
                 $set: {
                     name: updatedItem.name,
@@ -227,7 +227,7 @@ async function run() {
         app.get('/payments/:email', verifyToken, async (req, res) => {
             const email = req.params.email;
             const query = { email: email };
-            if(req.decoded.email !== email){
+            if (req.decoded.email !== email) {
                 return res.status(403).send({ message: 'forbidden access' });
             }
             const result = await paymentCollection.find(query).toArray();
@@ -264,7 +264,7 @@ async function run() {
             const users = await userCollection.estimatedDocumentCount();
             const products = await menuCollection.estimatedDocumentCount();
             const orders = await paymentCollection.estimatedDocumentCount();
-            
+
             const result = await paymentCollection.aggregate([
                 {
                     $group: {
@@ -277,7 +277,42 @@ async function run() {
             res.send({ users, products, orders, revenue });
         });
 
+        //aggregation pipeline example
+        app.get('/order-stats',  async (req, res) => {
+            const result = await paymentCollection.aggregate([
+                {
+                    $unwind: '$menuItemIds'
+                },
+                {
+                    $lookup: {
+                        from: 'menu',
+                        localField: 'menuItemIds',
+                        foreignField: '_id',
+                        as: 'menuItems'
+                    }
+                },
+                
+                
+                {
+                    $group: {
+                        _id: '$menuItems.category',
+                        quantity: { $sum: 1 },
+                        revenue: { $sum: '$menuItems.price' }
+                    }
+                },
+                {
+                    $project: {
+                        _id: 0,
+                        category: '$_id',
+                        quantity: '$quantity',
+                        revenue: '$revenue'
+                    }
+                }
+            ]).toArray();
+            res.send(result);
+        });
 
+        
         // Send a ping to confirm a successful connection
         //await client.db("admin").command({ ping: 1 });
         console.log("Pinged your deployment. You successfully connected to MongoDB!");
